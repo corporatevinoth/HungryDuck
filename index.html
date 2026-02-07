@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Duck Odyssey: Misty Ocean World</title>
     <style>
         * {
@@ -10,18 +10,26 @@
             padding: 0;
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
         
         body {
             overflow: hidden;
             background: #000;
             color: #fff;
+            touch-action: none;
         }
         
         #gameContainer {
-            position: relative;
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100vw;
             height: 100vh;
+            overflow: hidden;
         }
         
         #ui {
@@ -29,52 +37,55 @@
             top: 0;
             left: 0;
             width: 100%;
+            height: 100%;
             z-index: 100;
             pointer-events: none;
         }
         
         #title {
             text-align: center;
-            padding: 20px;
-            font-size: 2.5rem;
+            padding: 10px;
+            font-size: clamp(1.2rem, 4vw, 2.5rem);
             text-shadow: 0 0 10px rgba(255, 255, 200, 0.7);
             color: #ffec8b;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
             background: linear-gradient(transparent, rgba(0, 20, 40, 0.7));
         }
         
         #subtitle {
             position: absolute;
-            bottom: 150px;
-            width: 100%;
+            bottom: 20vh;
+            width: 90%;
             text-align: center;
-            font-size: 1.5rem;
+            font-size: clamp(1rem, 3vw, 1.5rem);
             text-shadow: 0 0 10px rgba(0, 100, 255, 0.7);
             color: #a3d5ff;
-            padding: 15px 30px;
-            background: rgba(0, 20, 40, 0.6);
+            padding: 10px 15px;
+            background: rgba(0, 20, 40, 0.8);
             border-radius: 10px;
             margin: 0 auto;
-            max-width: 800px;
             left: 50%;
             transform: translateX(-50%);
             transition: opacity 0.5s;
             opacity: 0;
+            backdrop-filter: blur(5px);
         }
         
         #stats {
             position: absolute;
-            top: 100px;
-            left: 20px;
-            background: rgba(0, 20, 40, 0.7);
-            padding: 15px;
+            top: 12vh;
+            left: 10px;
+            background: rgba(0, 20, 40, 0.8);
+            padding: 10px;
             border-radius: 10px;
-            font-size: 1.2rem;
-            min-width: 250px;
+            font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+            min-width: 180px;
+            max-width: 250px;
+            backdrop-filter: blur(5px);
         }
         
         .stat-item {
-            margin: 8px 0;
+            margin: 5px 0;
             display: flex;
             justify-content: space-between;
         }
@@ -84,18 +95,114 @@
             font-weight: bold;
         }
         
-        #controls {
+        #mobileControls {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 30vh;
+            pointer-events: auto;
+            display: none;
+        }
+        
+        #movementPad {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 150px;
+            height: 150px;
+            background: rgba(0, 20, 40, 0.6);
+            border-radius: 50%;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        #movementStick {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 236, 139, 0.8);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 15px rgba(255, 236, 139, 0.5);
+            transition: transform 0.1s;
+        }
+        
+        #actionButtons {
             position: absolute;
             bottom: 20px;
             right: 20px;
-            background: rgba(0, 20, 40, 0.7);
-            padding: 15px;
-            border-radius: 10px;
-            font-size: 1rem;
-            max-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
         
-        #controls h3 {
+        .mobile-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(0, 20, 40, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: #ffec8b;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            touch-action: manipulation;
+        }
+        
+        .mobile-btn:active {
+            background: rgba(0, 40, 80, 0.8);
+            transform: scale(0.95);
+        }
+        
+        #lookControls {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 70vh;
+            pointer-events: auto;
+            display: none;
+            touch-action: pan-x pan-y;
+        }
+        
+        #controlsInfo {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 20, 40, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            max-width: 300px;
+            display: block;
+            backdrop-filter: blur(5px);
+        }
+        
+        @media (max-width: 768px) {
+            #controlsInfo {
+                display: none;
+            }
+            
+            #mobileControls {
+                display: block;
+            }
+            
+            #lookControls {
+                display: block;
+            }
+            
+            #stats {
+                font-size: 0.9rem;
+                min-width: 160px;
+                padding: 8px;
+            }
+        }
+        
+        #controlsInfo h3 {
             color: #ffec8b;
             margin-bottom: 10px;
             text-align: center;
@@ -119,7 +226,7 @@
         }
         
         #loading {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
@@ -151,6 +258,8 @@
         #loadingText {
             font-size: 1.5rem;
             color: #a3d5ff;
+            text-align: center;
+            padding: 0 20px;
         }
         
         #loadingProgress {
@@ -185,10 +294,10 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0, 20, 40, 0.9);
-            padding: 20px 30px;
+            background: rgba(0, 20, 40, 0.95);
+            padding: 20px;
             border-radius: 15px;
-            font-size: 1.8rem;
+            font-size: clamp(1.2rem, 4vw, 1.8rem);
             text-align: center;
             color: #ffec8b;
             text-shadow: 0 0 10px rgba(255, 255, 200, 0.7);
@@ -196,8 +305,104 @@
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.5s;
-            max-width: 600px;
+            max-width: 90%;
             border: 2px solid rgba(255, 236, 139, 0.5);
+            backdrop-filter: blur(10px);
+        }
+        
+        #orientationWarning {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0a192f;
+            z-index: 2000;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        #orientationWarning h2 {
+            color: #ffec8b;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+        
+        #orientationWarning p {
+            color: #a3d5ff;
+            font-size: 1.2rem;
+            max-width: 400px;
+        }
+        
+        .rotate-icon {
+            font-size: 4rem;
+            margin: 20px;
+            color: #4dabf7;
+            animation: rotate 2s infinite ease-in-out;
+        }
+        
+        @keyframes rotate {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(90deg); }
+        }
+        
+        #menuButton {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 20, 40, 0.8);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #ffec8b;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+            pointer-events: auto;
+            z-index: 101;
+        }
+        
+        #mobileMenu {
+            position: absolute;
+            top: 70px;
+            right: 10px;
+            background: rgba(0, 20, 40, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            min-width: 200px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            display: none;
+            pointer-events: auto;
+        }
+        
+        .menu-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .menu-item:active {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .instructions {
+            font-size: 0.9rem;
+            color: #a3d5ff;
+            margin-top: 10px;
+            text-align: center;
+            padding: 0 10px;
         }
     </style>
 </head>
@@ -209,23 +414,40 @@
             <div id="stats">
                 <h3>Duck Stats</h3>
                 <div class="stat-item">
-                    <span>Feathers Collected:</span>
+                    <span>Feathers:</span>
                     <span id="featherCount" class="stat-value">0 / 10</span>
                 </div>
                 <div class="stat-item">
-                    <span>Islands Discovered:</span>
+                    <span>Islands:</span>
                     <span id="islandCount" class="stat-value">0</span>
                 </div>
                 <div class="stat-item">
-                    <span>Distance Traveled:</span>
+                    <span>Distance:</span>
                     <span id="distance" class="stat-value">0 m</span>
                 </div>
                 <div class="stat-item">
-                    <span>Waterfalls Found:</span>
+                    <span>Waterfalls:</span>
                     <span id="waterfalls" class="stat-value">0</span>
                 </div>
             </div>
-            <div id="controls">
+            
+            <div id="mobileControls">
+                <div id="movementPad">
+                    <div id="movementStick"></div>
+                </div>
+                <div id="actionButtons">
+                    <div class="mobile-btn" id="quackBtn">
+                        <span>🦆</span>
+                    </div>
+                    <div class="mobile-btn" id="speedBtn">
+                        <span>⚡</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="lookControls"></div>
+            
+            <div id="controlsInfo">
                 <h3>Controls</h3>
                 <div class="control-item">
                     <span>Move:</span>
@@ -246,6 +468,15 @@
                     <span>Quack:</span>
                     <div class="key">Q</div>
                 </div>
+                <div class="instructions">On mobile: Use touch to look, movement pad to swim</div>
+            </div>
+            
+            <div id="menuButton">☰</div>
+            <div id="mobileMenu">
+                <div class="menu-item" id="helpBtn">Help & Controls</div>
+                <div class="menu-item" id="soundBtn">Toggle Sound</div>
+                <div class="menu-item" id="subtitlesBtn">Toggle Subtitles</div>
+                <div class="menu-item" id="resetBtn">Reset Game</div>
             </div>
         </div>
         
@@ -258,11 +489,21 @@
         </div>
         
         <div id="message"></div>
+        
+        <div id="orientationWarning">
+            <div class="rotate-icon">🔄</div>
+            <h2>Please Rotate Device</h2>
+            <p>This game works best in landscape mode. Please rotate your device to continue.</p>
+        </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
     <script>
+        // Detect mobile device
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        
         // Game State
         const gameState = {
             feathers: 0,
@@ -284,7 +525,9 @@
                 "Time to explore every corner of this world!"
             ],
             currentSubtitle: 0,
-            subtitlesEnabled: true
+            subtitlesEnabled: true,
+            soundEnabled: true,
+            orientation: window.innerWidth > window.innerHeight ? 'landscape' : 'portrait'
         };
 
         // DOM Elements
@@ -297,6 +540,18 @@
         const distanceElement = document.getElementById('distance');
         const waterfallsElement = document.getElementById('waterfalls');
         const messageElement = document.getElementById('message');
+        const orientationWarning = document.getElementById('orientationWarning');
+        const movementStick = document.getElementById('movementStick');
+        const movementPad = document.getElementById('movementPad');
+        const quackBtn = document.getElementById('quackBtn');
+        const speedBtn = document.getElementById('speedBtn');
+        const menuButton = document.getElementById('menuButton');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const helpBtn = document.getElementById('helpBtn');
+        const soundBtn = document.getElementById('soundBtn');
+        const subtitlesBtn = document.getElementById('subtitlesBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const lookControls = document.getElementById('lookControls');
 
         // Three.js variables
         let scene, camera, renderer, controls;
@@ -304,8 +559,24 @@
         let clock = new THREE.Clock();
         let waterUniforms;
         
+        // Touch controls state
+        let touchState = {
+            movement: { x: 0, y: 0 },
+            isMoving: false,
+            lastTouchX: 0,
+            lastTouchY: 0,
+            isDragging: false,
+            speedBoost: false
+        };
+        
         // Initialize the game
         function init() {
+            // Check orientation on mobile
+            if (isMobile && window.innerHeight > window.innerWidth) {
+                orientationWarning.style.display = 'flex';
+                return;
+            }
+            
             // Update loading screen
             loadingText.textContent = "Initializing 3D scene...";
             loadingBar.style.width = '10%';
@@ -314,14 +585,18 @@
             scene = new THREE.Scene();
             scene.fog = new THREE.FogExp2(0xa3d5ff, 0.005);
             
-            // Create camera
+            // Create camera with mobile adjustments
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
-            camera.position.set(0, 5, 15);
+            camera.position.set(0, 5, isMobile ? 20 : 15);
             
             // Create renderer
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer = new THREE.WebGLRenderer({ 
+                antialias: true, 
+                alpha: true,
+                powerPreference: "high-performance"
+            });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit pixel ratio for performance
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -332,9 +607,11 @@
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
-            controls.minDistance = 5;
-            controls.maxDistance = 50;
+            controls.minDistance = isMobile ? 8 : 5;
+            controls.maxDistance = isMobile ? 40 : 50;
             controls.maxPolarAngle = Math.PI / 2 - 0.1;
+            controls.enablePan = false;
+            controls.enableZoom = !isMobile; // Disable zoom on mobile for better touch control
             
             loadingBar.style.width = '20%';
             loadingText.textContent = "Setting up lighting...";
@@ -383,14 +660,24 @@
             
             // Add event listeners
             window.addEventListener('resize', onWindowResize);
+            window.addEventListener('orientationchange', onOrientationChange);
             document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
+            
+            // Setup mobile controls
+            if (isTouchDevice) {
+                setupTouchControls();
+            }
+            
+            // Setup menu
+            setupMenu();
             
             // Hide loading screen
             setTimeout(() => {
                 loadingScreen.style.opacity = '0';
                 setTimeout(() => {
                     loadingScreen.style.display = 'none';
-                    showMessage("Welcome to Misty Ocean World! Use WASD to swim and explore!");
+                    showMessage("Welcome to Misty Ocean World!" + (isMobile ? " Use the controls to swim and explore!" : " Use WASD to swim and explore!"));
                 }, 1000);
             }, 500);
             
@@ -398,6 +685,176 @@
             
             // Start game loop
             animate();
+        }
+        
+        function setupTouchControls() {
+            // Movement pad
+            movementPad.addEventListener('touchstart', handleTouchStart, { passive: false });
+            movementPad.addEventListener('touchmove', handleTouchMove, { passive: false });
+            movementPad.addEventListener('touchend', handleTouchEnd, { passive: false });
+            
+            // Action buttons
+            quackBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                showSubtitle("Quack! Quack!");
+                quackBtn.style.transform = 'scale(0.95)';
+            });
+            
+            quackBtn.addEventListener('touchend', () => {
+                quackBtn.style.transform = 'scale(1)';
+            });
+            
+            speedBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                touchState.speedBoost = true;
+                duck.userData.maxSpeed = 0.4;
+                speedBtn.style.transform = 'scale(0.95)';
+                speedBtn.style.background = 'rgba(0, 40, 80, 0.8)';
+            });
+            
+            speedBtn.addEventListener('touchend', () => {
+                touchState.speedBoost = false;
+                duck.userData.maxSpeed = 0.2;
+                speedBtn.style.transform = 'scale(1)';
+                speedBtn.style.background = 'rgba(0, 20, 40, 0.6)';
+            });
+            
+            // Look controls (touch on main screen)
+            lookControls.addEventListener('touchstart', handleLookStart, { passive: false });
+            lookControls.addEventListener('touchmove', handleLookMove, { passive: false });
+            lookControls.addEventListener('touchend', handleLookEnd, { passive: false });
+        }
+        
+        function handleTouchStart(e) {
+            e.preventDefault();
+            touchState.isMoving = true;
+            updateMovementStick(e.touches[0]);
+        }
+        
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (touchState.isMoving) {
+                updateMovementStick(e.touches[0]);
+            }
+        }
+        
+        function handleTouchEnd(e) {
+            e.preventDefault();
+            touchState.isMoving = false;
+            touchState.movement.x = 0;
+            touchState.movement.y = 0;
+            movementStick.style.transform = 'translate(-50%, -50%)';
+        }
+        
+        function updateMovementStick(touch) {
+            const rect = movementPad.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            
+            let deltaX = touch.clientX - centerX;
+            let deltaY = touch.clientY - centerY;
+            
+            // Limit stick to pad boundaries
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            const maxDistance = rect.width / 2;
+            
+            if (distance > maxDistance) {
+                deltaX = (deltaX / distance) * maxDistance;
+                deltaY = (deltaY / distance) * maxDistance;
+            }
+            
+            // Update stick position
+            const stickX = (deltaX / maxDistance) * 30;
+            const stickY = (deltaY / maxDistance) * 30;
+            movementStick.style.transform = `translate(calc(-50% + ${stickX}px), calc(-50% + ${stickY}px))`;
+            
+            // Update movement direction
+            touchState.movement.x = deltaX / maxDistance;
+            touchState.movement.y = deltaY / maxDistance;
+        }
+        
+        function handleLookStart(e) {
+            e.preventDefault();
+            if (e.touches.length === 1) {
+                touchState.isDragging = true;
+                touchState.lastTouchX = e.touches[0].clientX;
+                touchState.lastTouchY = e.touches[0].clientY;
+            }
+        }
+        
+        function handleLookMove(e) {
+            e.preventDefault();
+            if (touchState.isDragging && e.touches.length === 1) {
+                const deltaX = e.touches[0].clientX - touchState.lastTouchX;
+                const deltaY = e.touches[0].clientY - touchState.lastTouchY;
+                
+                // Update camera rotation
+                controls.rotateLeft(-deltaX * 0.01);
+                controls.rotateUp(-deltaY * 0.01);
+                
+                touchState.lastTouchX = e.touches[0].clientX;
+                touchState.lastTouchY = e.touches[0].clientY;
+            }
+        }
+        
+        function handleLookEnd(e) {
+            e.preventDefault();
+            touchState.isDragging = false;
+        }
+        
+        function setupMenu() {
+            menuButton.addEventListener('click', () => {
+                mobileMenu.style.display = mobileMenu.style.display === 'block' ? 'none' : 'block';
+            });
+            
+            helpBtn.addEventListener('click', () => {
+                showMessage("Controls: Use WASD or movement pad to swim. Mouse drag or touch to look around. Collect all feathers!");
+                mobileMenu.style.display = 'none';
+            });
+            
+            soundBtn.addEventListener('click', () => {
+                gameState.soundEnabled = !gameState.soundEnabled;
+                soundBtn.textContent = gameState.soundEnabled ? 'Sound: ON' : 'Sound: OFF';
+                showMessage(gameState.soundEnabled ? "Sound enabled" : "Sound disabled");
+                setTimeout(() => {
+                    mobileMenu.style.display = 'none';
+                }, 1000);
+            });
+            
+            subtitlesBtn.addEventListener('click', () => {
+                gameState.subtitlesEnabled = !gameState.subtitlesEnabled;
+                subtitlesBtn.textContent = gameState.subtitlesEnabled ? 'Subtitles: ON' : 'Subtitles: OFF';
+                showMessage(gameState.subtitlesEnabled ? "Subtitles enabled" : "Subtitles disabled");
+                setTimeout(() => {
+                    mobileMenu.style.display = 'none';
+                }, 1000);
+            });
+            
+            resetBtn.addEventListener('click', () => {
+                if (confirm("Are you sure you want to reset the game? All progress will be lost.")) {
+                    location.reload();
+                }
+            });
+            
+            // Close menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!menuButton.contains(e.target) && !mobileMenu.contains(e.target)) {
+                    mobileMenu.style.display = 'none';
+                }
+            });
+        }
+        
+        function onOrientationChange() {
+            setTimeout(() => {
+                if (isMobile) {
+                    if (window.innerHeight > window.innerWidth) {
+                        orientationWarning.style.display = 'flex';
+                    } else {
+                        orientationWarning.style.display = 'none';
+                        onWindowResize();
+                    }
+                }
+            }, 100);
         }
         
         function setupLighting() {
@@ -409,8 +866,8 @@
             const directionalLight = new THREE.DirectionalLight(0xffecd2, 0.8);
             directionalLight.position.set(50, 100, 50);
             directionalLight.castShadow = true;
-            directionalLight.shadow.mapSize.width = 2048;
-            directionalLight.shadow.mapSize.height = 2048;
+            directionalLight.shadow.mapSize.width = isMobile ? 1024 : 2048;
+            directionalLight.shadow.mapSize.height = isMobile ? 1024 : 2048;
             directionalLight.shadow.camera.near = 0.5;
             directionalLight.shadow.camera.far = 500;
             directionalLight.shadow.camera.left = -100;
@@ -509,7 +966,7 @@
         }
         
         function createIslands() {
-            const islandCount = 15;
+            const islandCount = isMobile ? 10 : 15; // Fewer islands on mobile for performance
             
             for (let i = 0; i < islandCount; i++) {
                 // Create island group
@@ -523,7 +980,7 @@
                 const y = -1 + Math.random() * 5;
                 
                 // Create island base (rocky terrain)
-                const geometry = new THREE.SphereGeometry(3 + Math.random() * 5, 32, 32, 0, Math.PI * 2, 0, Math.PI / 2);
+                const geometry = new THREE.SphereGeometry(3 + Math.random() * 5, isMobile ? 16 : 32, isMobile ? 16 : 32, 0, Math.PI * 2, 0, Math.PI / 2);
                 const material = new THREE.MeshStandardMaterial({
                     color: 0x7a7a7a,
                     roughness: 0.8,
@@ -536,10 +993,10 @@
                 islandGroup.add(islandBase);
                 
                 // Add some rocks on top
-                const rockCount = 5 + Math.floor(Math.random() * 10);
+                const rockCount = isMobile ? 3 : 5 + Math.floor(Math.random() * 10);
                 for (let j = 0; j < rockCount; j++) {
                     const rockSize = 0.5 + Math.random() * 1.5;
-                    const rockGeometry = new THREE.SphereGeometry(rockSize, 16, 16);
+                    const rockGeometry = new THREE.SphereGeometry(rockSize, isMobile ? 8 : 16, isMobile ? 8 : 16);
                     const rockMaterial = new THREE.MeshStandardMaterial({
                         color: 0x5a5a5a,
                         roughness: 0.9
@@ -556,8 +1013,8 @@
                     islandGroup.add(rock);
                 }
                 
-                // Add some vegetation
-                if (Math.random() > 0.3) {
+                // Add some vegetation (simplified on mobile)
+                if (Math.random() > 0.3 && !isMobile) {
                     const grassGeometry = new THREE.ConeGeometry(0.5, 2, 8);
                     const grassMaterial = new THREE.MeshStandardMaterial({
                         color: 0x3a7a3a,
@@ -598,7 +1055,7 @@
         }
         
         function createWaterfalls() {
-            const waterfallCount = 8;
+            const waterfallCount = isMobile ? 5 : 8;
             
             for (let i = 0; i < waterfallCount; i++) {
                 // Create waterfall group
@@ -608,8 +1065,8 @@
                 const islandIndex = Math.floor(Math.random() * islands.length);
                 const island = islands[islandIndex];
                 
-                // Create waterfall particles
-                const particleCount = 200;
+                // Create waterfall particles (simplified on mobile)
+                const particleCount = isMobile ? 50 : 200;
                 const particles = new THREE.BufferGeometry();
                 const positions = new Float32Array(particleCount * 3);
                 const colors = new Float32Array(particleCount * 3);
@@ -633,7 +1090,7 @@
                 particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
                 
                 const particleMaterial = new THREE.PointsMaterial({
-                    size: 0.2,
+                    size: isMobile ? 0.3 : 0.2,
                     vertexColors: true,
                     transparent: true,
                     opacity: 0.7
@@ -670,7 +1127,7 @@
             duck = new THREE.Group();
             
             // Duck body (main sphere)
-            const bodyGeometry = new THREE.SphereGeometry(1, 16, 16);
+            const bodyGeometry = new THREE.SphereGeometry(1, isMobile ? 12 : 16, isMobile ? 12 : 16);
             const bodyMaterial = new THREE.MeshStandardMaterial({
                 color: 0xffd43b,
                 roughness: 0.7,
@@ -681,7 +1138,7 @@
             duck.add(body);
             
             // Duck head (smaller sphere)
-            const headGeometry = new THREE.SphereGeometry(0.6, 16, 16);
+            const headGeometry = new THREE.SphereGeometry(0.6, isMobile ? 10 : 16, isMobile ? 10 : 16);
             const headMaterial = new THREE.MeshStandardMaterial({
                 color: 0xffd43b,
                 roughness: 0.7,
@@ -693,7 +1150,7 @@
             duck.add(head);
             
             // Duck beak
-            const beakGeometry = new THREE.ConeGeometry(0.15, 0.5, 8);
+            const beakGeometry = new THREE.ConeGeometry(0.15, 0.5, 6);
             const beakMaterial = new THREE.MeshStandardMaterial({
                 color: 0xff6b35,
                 roughness: 0.5
@@ -705,7 +1162,7 @@
             duck.add(beak);
             
             // Duck tail
-            const tailGeometry = new THREE.ConeGeometry(0.3, 0.8, 8);
+            const tailGeometry = new THREE.ConeGeometry(0.3, 0.8, 6);
             const tailMaterial = new THREE.MeshStandardMaterial({
                 color: 0xffd43b,
                 roughness: 0.7,
@@ -718,7 +1175,7 @@
             duck.add(tail);
             
             // Duck wings
-            const wingGeometry = new THREE.SphereGeometry(0.4, 16, 16, 0, Math.PI * 2, 0, Math.PI);
+            const wingGeometry = new THREE.SphereGeometry(0.4, isMobile ? 10 : 16, isMobile ? 10 : 16, 0, Math.PI * 2, 0, Math.PI);
             const wingMaterial = new THREE.MeshStandardMaterial({
                 color: 0xffd43b,
                 roughness: 0.7,
@@ -740,7 +1197,7 @@
             duck.add(rightWing);
             
             // Duck eyes
-            const eyeGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+            const eyeGeometry = new THREE.SphereGeometry(0.1, 6, 6);
             const eyeMaterial = new THREE.MeshStandardMaterial({
                 color: 0x000000,
                 roughness: 0.1,
@@ -764,187 +1221,413 @@
                 speed: 0,
                 maxSpeed: 0.2,
                 acceleration: 0.01,
-                    deceleration: 0.02,
-                    rotationSpeed: 0.05,
-                    velocity: new THREE.Vector3(),
-                    isMoving: false,
-                    wingFlapSpeed: 0
-                };
-                
-                scene.add(duck);
-                
-                // Set camera to follow duck
-                controls.target.copy(duck.position);
-            }
+                deceleration: 0.02,
+                rotationSpeed: 0.05,
+                velocity: new THREE.Vector3(),
+                isMoving: false,
+                wingFlapSpeed: 0
+            };
             
-            function createFeathers() {
-                const featherCount = gameState.maxFeathers;
-                
-                for (let i = 0; i < featherCount; i++) {
-                    // Create feather geometry
-                    const featherGroup = new THREE.Group();
-                    
-                    // Feather shaft
-                    const shaftGeometry = new THREE.CylinderGeometry(0.03, 0.01, 0.8, 8);
-                    const shaftMaterial = new THREE.MeshStandardMaterial({
-                        color: 0xffffff,
-                        roughness: 0.3,
-                        metalness: 0.5,
-                        emissive: 0x222222
-                    });
-                    const shaft = new THREE.Mesh(shaftGeometry, shaftMaterial);
-                    featherGroup.add(shaft);
-                    
-                    // Feather vane (as a triangle)
-                    const vaneGeometry = new THREE.ConeGeometry(0.4, 0.6, 3);
-                    const vaneMaterial = new THREE.MeshStandardMaterial({
-                        color: 0xffec8b,
-                        roughness: 0.2,
-                        metalness: 0.7,
-                        emissive: 0x443300,
-                        emissiveIntensity: 0.5
-                    });
-                    const vane = new THREE.Mesh(vaneGeometry, vaneMaterial);
-                    vane.position.set(0, 0.4, 0);
-                    vane.rotation.x = Math.PI;
-                    featherGroup.add(vane);
-                    
-                    // Position feather randomly in the world
-                    const angle = Math.random() * Math.PI * 2;
-                    const radius = 10 + Math.random() * 70;
-                    const x = Math.cos(angle) * radius;
-                    const z = Math.sin(angle) * radius;
-                    
-                    // Put feather on an island or floating
-                    const y = Math.random() > 0.5 ? 2 + Math.random() * 5 : 0.5;
-                    
-                    featherGroup.position.set(x, y, z);
-                    featherGroup.rotation.y = Math.random() * Math.PI * 2;
-                    featherGroup.rotation.x = Math.random() * 0.5;
-                    
-                    featherGroup.userData = {
-                        id: i,
-                        collected: false,
-                        type: 'feather',
-                        rotationSpeed: 0.01 + Math.random() * 0.02,
-                        floatSpeed: 0.5 + Math.random() * 0.5,
-                        floatOffset: Math.random() * Math.PI * 2
-                    };
-                    
-                    feathers.push(featherGroup);
-                    scene.add(featherGroup);
-                    
-                    // Also create a DOM element for visual effect when collected
-                    const featherElement = document.createElement('div');
-                    featherElement.className = 'feather';
-                    featherElement.style.left = '50%';
-                    featherElement.style.top = '50%';
-                    featherElement.style.opacity = '0';
-                    document.getElementById('gameContainer').appendChild(featherElement);
-                }
-            }
+            scene.add(duck);
             
-            function createFogParticles() {
-                // Create glowing fog particles
-                const particleCount = 500;
-                const particles = new THREE.BufferGeometry();
-                const positions = new Float32Array(particleCount * 3);
-                const colors = new Float32Array(particleCount * 3);
-                const sizes = new Float32Array(particleCount);
+            // Set camera to follow duck
+            controls.target.copy(duck.position);
+        }
+        
+        function createFeathers() {
+            const featherCount = isMobile ? 6 : gameState.maxFeathers;
+            
+            for (let i = 0; i < featherCount; i++) {
+                // Create feather geometry
+                const featherGroup = new THREE.Group();
                 
-                const color = new THREE.Color(0xa3d5ff);
-                
-                for (let i = 0; i < particleCount; i++) {
-                    // Position particles randomly in the world
-                    const i3 = i * 3;
-                    positions[i3] = (Math.random() - 0.5) * 200;
-                    positions[i3 + 1] = Math.random() * 30;
-                    positions[i3 + 2] = (Math.random() - 0.5) * 200;
-                    
-                    // Vary the color slightly
-                    colors[i3] = color.r * (0.7 + Math.random() * 0.3);
-                    colors[i3 + 1] = color.g * (0.7 + Math.random() * 0.3);
-                    colors[i3 + 2] = color.b * (0.7 + Math.random() * 0.3);
-                    
-                    // Random size
-                    sizes[i] = Math.random() * 2 + 0.5;
-                }
-                
-                particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-                particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-                particles.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-                
-                const particleMaterial = new THREE.PointsMaterial({
-                    size: 1,
-                    vertexColors: true,
-                    transparent: true,
-                    opacity: 0.3,
-                    blending: THREE.AdditiveBlending
+                // Feather shaft
+                const shaftGeometry = new THREE.CylinderGeometry(0.03, 0.01, 0.8, 6);
+                const shaftMaterial = new THREE.MeshStandardMaterial({
+                    color: 0xffffff,
+                    roughness: 0.3,
+                    metalness: 0.5,
+                    emissive: 0x222222
                 });
+                const shaft = new THREE.Mesh(shaftGeometry, shaftMaterial);
+                featherGroup.add(shaft);
                 
-                const fogParticles = new THREE.Points(particles, particleMaterial);
-                scene.add(fogParticles);
-            }
-            
-            function onWindowResize() {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            }
-            
-            function onKeyDown(event) {
-                // Quack key
-                if (event.key === 'q' || event.key === 'Q') {
-                    showSubtitle("Quack! Quack!");
-                    return;
-                }
+                // Feather vane (as a triangle)
+                const vaneGeometry = new THREE.ConeGeometry(0.4, 0.6, 3);
+                const vaneMaterial = new THREE.MeshStandardMaterial({
+                    color: 0xffec8b,
+                    roughness: 0.2,
+                    metalness: 0.7,
+                    emissive: 0x443300,
+                    emissiveIntensity: 0.5
+                });
+                const vane = new THREE.Mesh(vaneGeometry, vaneMaterial);
+                vane.position.set(0, 0.4, 0);
+                vane.rotation.x = Math.PI;
+                featherGroup.add(vane);
                 
-                // Speed boost
-                if (event.key === 'Shift') {
-                    duck.userData.maxSpeed = 0.4;
-                    return;
-                }
-            }
-            
-            function updateDuckMovement() {
-                const delta = clock.getDelta();
-                const keys = {
-                    w: false, a: false, s: false, d: false
+                // Position feather randomly in the world
+                const angle = Math.random() * Math.PI * 2;
+                const radius = 10 + Math.random() * 70;
+                const x = Math.cos(angle) * radius;
+                const z = Math.sin(angle) * radius;
+                
+                // Put feather on an island or floating
+                const y = Math.random() > 0.5 ? 2 + Math.random() * 5 : 0.5;
+                
+                featherGroup.position.set(x, y, z);
+                featherGroup.rotation.y = Math.random() * Math.PI * 2;
+                featherGroup.rotation.x = Math.random() * 0.5;
+                
+                featherGroup.userData = {
+                    id: i,
+                    collected: false,
+                    type: 'feather',
+                    rotationSpeed: 0.01 + Math.random() * 0.02,
+                    floatSpeed: 0.5 + Math.random() * 0.5,
+                    floatOffset: Math.random() * Math.PI * 2
                 };
                 
-                // Check key states
-                if (keys.w = (isKeyPressed('W') || isKeyPressed('w'))) duck.userData.isMoving = true;
-                if (keys.s = (isKeyPressed('S') || isKeyPressed('s'))) duck.userData.isMoving = true;
-                if (keys.a = (isKeyPressed('A') || isKeyPressed('a'))) duck.userData.isMoving = true;
-                if (keys.d = (isKeyPressed('D') || isKeyPressed('d'))) duck.userData.isMoving = true;
+                feathers.push(featherGroup);
+                scene.add(featherGroup);
                 
-                // Reset speed if no keys pressed
-                if (!keys.w && !keys.a && !keys.s && !keys.d) {
-                    duck.userData.isMoving = false;
+                // Also create a DOM element for visual effect when collected
+                const featherElement = document.createElement('div');
+                featherElement.className = 'feather';
+                featherElement.style.left = '50%';
+                featherElement.style.top = '50%';
+                featherElement.style.opacity = '0';
+                document.getElementById('gameContainer').appendChild(featherElement);
+            }
+            
+            // Update max feathers for mobile
+            if (isMobile) {
+                gameState.maxFeathers = 6;
+                featherCountElement.textContent = "0 / 6";
+            }
+        }
+        
+        function createFogParticles() {
+            // Create glowing fog particles (fewer on mobile)
+            const particleCount = isMobile ? 200 : 500;
+            const particles = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+            const sizes = new Float32Array(particleCount);
+            
+            const color = new THREE.Color(0xa3d5ff);
+            
+            for (let i = 0; i < particleCount; i++) {
+                // Position particles randomly in the world
+                const i3 = i * 3;
+                positions[i3] = (Math.random() - 0.5) * 200;
+                positions[i3 + 1] = Math.random() * 30;
+                positions[i3 + 2] = (Math.random() - 0.5) * 200;
+                
+                // Vary the color slightly
+                colors[i3] = color.r * (0.7 + Math.random() * 0.3);
+                colors[i3 + 1] = color.g * (0.7 + Math.random() * 0.3);
+                colors[i3 + 2] = color.b * (0.7 + Math.random() * 0.3);
+                
+                // Random size
+                sizes[i] = Math.random() * 2 + 0.5;
+            }
+            
+            particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            particles.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+            
+            const particleMaterial = new THREE.PointsMaterial({
+                size: isMobile ? 1.5 : 1,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.3,
+                blending: THREE.AdditiveBlending
+            });
+            
+            const fogParticles = new THREE.Points(particles, particleMaterial);
+            scene.add(fogParticles);
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        function onKeyDown(event) {
+            keyStates[event.key.toLowerCase()] = true;
+            
+            // Quack key
+            if (event.key === 'q' || event.key === 'Q') {
+                showSubtitle("Quack! Quack!");
+                return;
+            }
+            
+            // Speed boost
+            if (event.key === 'Shift') {
+                duck.userData.maxSpeed = 0.4;
+                return;
+            }
+        }
+        
+        function onKeyUp(event) {
+            keyStates[event.key.toLowerCase()] = false;
+            
+            // Speed boost release
+            if (event.key === 'Shift') {
+                duck.userData.maxSpeed = 0.2;
+            }
+        }
+        
+        function updateDuckMovement() {
+            const delta = clock.getDelta();
+            
+            let moveDirection = new THREE.Vector3();
+            let isMoving = false;
+            
+            if (isTouchDevice && touchState.isMoving) {
+                // Use touch controls
+                moveDirection.x = touchState.movement.x;
+                moveDirection.z = -touchState.movement.y; // Invert Y for forward/backward
+                isMoving = touchState.movement.x !== 0 || touchState.movement.y !== 0;
+            } else {
+                // Use keyboard controls
+                const keys = {
+                    w: keyStates['w'] || false,
+                    a: keyStates['a'] || false,
+                    s: keyStates['s'] || false,
+                    d: keyStates['d'] || false
+                };
+                
+                if (keys.w) { moveDirection.z -= 1; isMoving = true; }
+                if (keys.s) { moveDirection.z += 1; isMoving = true; }
+                if (keys.a) { moveDirection.x -= 1; isMoving = true; }
+                if (keys.d) { moveDirection.x += 1; isMoving = true; }
+            }
+            
+            // Update duck speed
+            if (isMoving) {
+                duck.userData.speed = Math.min(duck.userData.speed + duck.userData.acceleration, duck.userData.maxSpeed);
+            } else {
+                duck.userData.speed = Math.max(duck.userData.speed - duck.userData.deceleration, 0);
+            }
+            
+            // Normalize direction if moving diagonally
+            if (moveDirection.length() > 0) {
+                moveDirection.normalize();
+                
+                // Rotate duck to face movement direction
+                const targetRotation = Math.atan2(moveDirection.x, moveDirection.z);
+                duck.rotation.y = THREE.MathUtils.lerp(duck.rotation.y, targetRotation, duck.userData.rotationSpeed);
+                
+                // Move duck
+                duck.position.x += moveDirection.x * duck.userData.speed;
+                duck.position.z += moveDirection.z * duck.userData.speed;
+                
+                // Update wing flapping animation
+                duck.userData.wingFlapSpeed += delta * 10 * duck.userData.speed;
+            }
+            
+            // Apply floating/waving motion
+            const waveHeight = 0.1;
+            duck.position.y = Math.sin(clock.getElapsedTime() * 2) * waveHeight;
+            
+            // Apply wing flapping animation
+            if (duck.children) {
+                // Find wings by position
+                duck.children.forEach(child => {
+                    if (child.position.z > 0.5) {
+                        // Left wing
+                        child.rotation.x = Math.PI / 4 + Math.sin(duck.userData.wingFlapSpeed) * 0.2;
+                    } else if (child.position.z < -0.5) {
+                        // Right wing
+                        child.rotation.x = -Math.PI / 4 + Math.sin(duck.userData.wingFlapSpeed) * 0.2;
+                    }
+                });
+            }
+            
+            // Update camera target to follow duck
+            controls.target.lerp(duck.position, 0.1);
+            
+            // Update distance traveled
+            const distance = duck.position.distanceTo(gameState.lastPosition);
+            if (distance > 1) {
+                gameState.distanceTraveled += distance;
+                gameState.lastPosition.copy(duck.position);
+                distanceElement.textContent = Math.floor(gameState.distanceTraveled) + " m";
+            }
+        }
+        
+        // Key state tracking
+        const keyStates = {};
+        
+        function updateFeathers() {
+            const time = clock.getElapsedTime();
+            
+            feathers.forEach((feather, index) => {
+                if (feather.userData.collected) return;
+                
+                // Floating animation
+                feather.position.y += Math.sin(time * feather.userData.floatSpeed + feather.userData.floatOffset) * 0.01;
+                feather.rotation.y += feather.userData.rotationSpeed;
+                
+                // Check collision with duck
+                const distance = feather.position.distanceTo(duck.position);
+                if (distance < 2) {
+                    collectFeather(feather, index);
+                }
+            });
+        }
+        
+        function collectFeather(feather, index) {
+            feather.userData.collected = true;
+            gameState.feathers++;
+            featherCountElement.textContent = gameState.feathers + " / " + gameState.maxFeathers;
+            
+            // Visual feedback
+            showMessage("Shiny feather collected! " + gameState.feathers + "/" + gameState.maxFeathers);
+            
+            // Create visual effect
+            const featherElements = document.querySelectorAll('.feather');
+            if (featherElements[index]) {
+                featherElements[index].style.left = (Math.random() * 80 + 10) + '%';
+                featherElements[index].style.top = (Math.random() * 80 + 10) + '%';
+                featherElements[index].style.opacity = '1';
+                featherElements[index].style.transition = 'opacity 2s';
+                
+                setTimeout(() => {
+                    featherElements[index].style.opacity = '0';
+                }, 500);
+            }
+            
+            // Hide feather in 3D scene
+            feather.visible = false;
+            
+            // Check if all feathers collected
+            if (gameState.feathers >= gameState.maxFeathers) {
+                setTimeout(() => {
+                    showMessage("All feathers collected! You're the bravest duck in the Misty Ocean!");
+                }, 1000);
+            }
+        }
+        
+        function updateWaterfalls() {
+            const time = clock.getElapsedTime();
+            
+            waterfalls.forEach(waterfall => {
+                // Animate waterfall particles
+                const particles = waterfall.userData.particleSystem;
+                const positions = particles.geometry.attributes.position.array;
+                
+                for (let i = 0; i < positions.length; i += 3) {
+                    // Move particles downward
+                    positions[i + 1] -= 0.1;
+                    
+                    // Reset particles that have fallen too far
+                    if (positions[i + 1] < 0) {
+                        positions[i + 1] = 15;
+                        positions[i] = (Math.random() - 0.5) * 2;
+                        positions[i + 2] = (Math.random() - 0.5) * 2;
+                    }
                 }
                 
-                // Update duck speed
-                if (duck.userData.isMoving) {
-                    duck.userData.speed = Math.min(duck.userData.speed + duck.userData.acceleration, duck.userData.maxSpeed);
-                } else {
-                    duck.userData.speed = Math.max(duck.userData.speed - duck.userData.deceleration, 0);
+                particles.geometry.attributes.position.needsUpdate = true;
+                
+                // Check if duck is near waterfall
+                const worldPosition = new THREE.Vector3();
+                waterfall.getWorldPosition(worldPosition);
+                
+                const distance = worldPosition.distanceTo(duck.position);
+                if (distance < 5 && !waterfall.userData.found) {
+                    waterfall.userData.found = true;
+                    gameState.waterfallsFound++;
+                    waterfallsElement.textContent = gameState.waterfallsFound;
+                    showSubtitle("Whoa! A magnificent waterfall!");
+                }
+            });
+        }
+        
+        function updateIslands() {
+            islands.forEach(island => {
+                // Check if duck is near island
+                const distance = island.position.distanceTo(duck.position);
+                if (distance < 10 && !island.userData.discovered) {
+                    island.userData.discovered = true;
+                    gameState.islandsDiscovered++;
+                    islandCountElement.textContent = gameState.islandsDiscovered;
+                    
+                    // Show discovery subtitle
+                    if (gameState.subtitlesEnabled && gameState.currentSubtitle < gameState.subtitles.length) {
+                        showSubtitle(gameState.subtitles[gameState.currentSubtitle]);
+                        gameState.currentSubtitle++;
+                    }
                 }
                 
-                // Calculate movement direction
-                const moveDirection = new THREE.Vector3();
-                
-                if (keys.w) moveDirection.z -= 1;
-                if (keys.s) moveDirection.z += 1;
-                if (keys.a) moveDirection.x -= 1;
-                if (keys.d) moveDirection.x += 1;
-                
-                // Normalize direction if moving diagonally
-                if (moveDirection.length() > 0) {
-                    moveDirection.normalize();
-                    
-                    // Rotate duck to face movement direction
-                    const targetRotation = Math.atan2(moveDirection.x, moveDirection.z);
-                    duck.rotation.y = THREE.MathUtils.lerp(duck.rotation.y, targetRotation, duck.userData.rotationSpeed);
-                    
-                    // Move duck
-                    duck.position.x += move
+                // Gentle floating animation for islands
+                const time = clock.getElapsedTime();
+                island.position.y += Math.sin(time * 0.5 + island.userData.id) * 0.005;
+                island.rotation.y += 0.001;
+            });
+        }
+        
+        function showSubtitle(text) {
+            if (!gameState.subtitlesEnabled) return;
+            
+            subtitleElement.textContent = text;
+            subtitleElement.style.opacity = '1';
+            
+            setTimeout(() => {
+                subtitleElement.style.opacity = '0';
+            }, 3000);
+        }
+        
+        function showMessage(text) {
+            messageElement.textContent = text;
+            messageElement.style.opacity = '1';
+            
+            setTimeout(() => {
+                messageElement.style.opacity = '0';
+            }, 3000);
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+            
+            // Update water
+            if (waterUniforms) {
+                waterUniforms.time.value = time;
+            }
+            
+            // Update duck movement
+            updateDuckMovement();
+            
+            // Update feathers
+            updateFeathers();
+            
+            // Update waterfalls
+            updateWaterfalls();
+            
+            // Update islands
+            updateIslands();
+            
+            // Update controls
+            controls.update();
+            
+            // Render scene
+            renderer.render(scene, camera);
+        }
+        
+        // Initialize the game when page loads
+        window.addEventListener('load', init);
+        
+        // Initialize key states for movement keys
+        ['w', 'a', 's', 'd', 'shift'].forEach(key => {
+            keyStates[key] = false;
+        });
+    </script>
+</body>
+</html>
