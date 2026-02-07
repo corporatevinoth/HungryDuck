@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Duck Adventure: Misty Ocean World</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #subtitles { position: absolute; bottom: 10%; left: 50%; transform: translateX(-50%); color: white; font-size: 24px; text-shadow: 2px 2px 4px black; text-align: center; }
+    </style>
+</head>
+<body>
+    <div id="subtitles"></div>
+    <script type="module">
+        import * as THREE from 'https://unpkg.com/three@latest/build/three.module.js';
+        import { OrbitControls } from 'https://unpkg.com/three@latest/examples/jsm/controls/OrbitControls.js';
+        import { Water } from 'https://unpkg.com/three@latest/examples/jsm/objects/Water.js';
+        import { Sky } from 'https://unpkg.com/three@latest/examples/jsm/objects/Sky.js';
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 20000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 0.5;
+        document.body.appendChild(renderer.domElement);
+
+        scene.fog = new THREE.FogExp2(0xaaccff, 0.0007);
+
+        // Sky
+        const sky = new Sky();
+        sky.scale.setScalar(10000);
+        scene.add(sky);
+
+        const sun = new THREE.Vector3();
+        const skyUniforms = sky.material.uniforms;
+        skyUniforms['turbidity'].value = 10;
+        skyUniforms['rayleigh'].value = 2;
+        skyUniforms['mieCoefficient'].value = 0.005;
+        skyUniforms['mieDirectionalG'].value = 0.8;
+
+        const parameters = { elevation: 2, azimuth: -180 };
+        const pmremGenerator = new THREE.PMREMGenerator(renderer);
+        let renderTarget;
+
+        function updateSun() {
+            const phi = THREE.MathUtils.degToRad(90 - parameters.elevation);
+            const theta = THREE.MathUtils.degToRad(parameters.azimuth);
+            sun.setFromSphericalCoords(1, phi, theta);
+            sky.material.uniforms['sunPosition'].value.copy(sun);
+            if (renderTarget) renderTarget.dispose();
+            renderTarget = pmremGenerator.fromScene(sky);
+            scene.environment = renderTarget.texture;
+        }
+        updateSun();
+
+        // Lighting
+        const hemiLight = new THREE.HemisphereLight(0xffeeb1, 0x080820, 1);
+        scene.add(hemiLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffd79a, 1);
+        dirLight.position.copy(sun);
+        scene.add(dirLight);
+
+        // Water
+        const waterGeometry = new THREE.PlaneGeometry(10000, 10000);
+        const water = new Water(waterGeometry, {
+            textureWidth: 512,
+            textureHeight: 512,
+            waterNormals: new THREE.TextureLoader().load('https://threejs.org/examples/textures/water/Water_2_M_Normal.jpg'),
+            sunDirection: sun,
+            sunColor: 0xffffff,
+            waterColor: 0x001e0f,
+            distortionScale: 3.7,
+            fog: true
+        });
+        water.rotation.x = -Math.PI / 2;
+        scene.add(water);
+
+        // Duck
+        const duckGroup = new THREE.Group();
+        const bodyGeom = new THREE.CylinderGeometry(0.8, 0.8, 1.5, 32);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xffff00 });
+        const body = new THREE.Mesh(bodyGeom, bodyMat);
+        duckGroup.add(body);
+
+        const headGeom = new THREE.SphereGeometry(0.6, 32, 32);
+        const head = new THREE.Mesh(headGeom, bodyMat);
+        head.position.y = 1.0;
+        duckGroup.add(head);
+
+        const beakGeom = new THREE.ConeGeometry(0.3, 0.8, 32);
+        const beakMat = new THREE.MeshStandardMaterial({ color: 0xffa500 });
+        const beak = new THREE.Mesh(beakGeom, beakMat);
+        beak.position.set(0, 1.0, 0.6);
+        beak.rotation.x = Math.PI / 2;
+        duckGroup.add(beak);
+
+        duckGroup.position.set(0, 0.5, 0);
+        scene.add(duckGroup);
+
+        // Floating Islands
+        const islands = [];
+        function createIsland() {
+            const group = new THREE.Group();
+            const rockGeom = new THREE.IcosahedronGeometry(Math.random() * 5 + 3, 1);
+            const rockMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.8 });
+            const rock = new THREE.Mesh(rockGeom, rockMat);
+            group.add(rock);
+            return group;
+        }
+        for (let i = 0; i < 10; i++) {
+            const island = createIsland();
+            island.position.set(Math.random() * 200 - 100, Math.random() * 10 + 5, Math.random() * 200 - 100);
+            scene.add(island);
+            islands.push(island);
+        }
+
+        // Waterfalls (simple)
+        function createWaterfall(height, pos) {
+            const geom = new THREE.CylinderGeometry(2, 3, height, 32, 1, true);
+            const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3, side: THREE.DoubleSide });
+            const fall = new THREE.Mesh(geom, mat);
+            fall.position.copy(pos);
+            fall.position.y -= height / 2;
+            scene.add(fall);
+        }
+        // Add to a few islands
+        createWaterfall(10, islands[0].position.clone());
+        createWaterfall(15, islands[2].position.clone());
+        createWaterfall(8, islands[5].position.clone());
+
+        // Feathers
+        const feathers = [];
+        function createFeather() {
+            const geom = new THREE.SphereGeometry(0.2);
+            const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffff00, emissiveIntensity: 1 });
+            const feather = new THREE.Mesh(geom, mat);
+            feather.position.set(Math.random() * 100 - 50, Math.random() * 5 + 1, Math.random() * 100 - 50);
+            scene.add(feather);
+            feathers.push(feather);
+        }
+        for (let i = 0; i = 20; i++) createFeather();
+
+        // Narrative Areas
+        const areas = [
+            { pos: new THREE.Vector3(50, 0, 50), text: "Quack, I've reached the Misty Pond!", radius: 10, visited: false }
+        ];
+
+        // Controls
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.target.copy(duckGroup.position);
+        controls.minDistance = 5;
+        controls.maxDistance = 50;
+        controls.maxPolarAngle = Math.PI / 2;
+        camera.position.set(0, 5, 10);
+        controls.update();
+
+        // Keyboard
+        const keys = {};
+        document.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+        document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+        const moveSpeed = 0.5;
+        const velocity = new THREE.Vector3();
+        const forward = new THREE.Vector3();
+        const right = new THREE.Vector3();
+        const subtitleDiv = document.getElementById('subtitles');
+
+        // Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        let time = 0;
+        function animate(t) {
+            requestAnimationFrame(animate);
+            time = t * 0.001;
+
+            // Water animation
+            water.material.uniforms['time'].value += 1.0 / 60.0;
+
+            // Duck swimming animation (bobbing)
+            duckGroup.position.y = 0.5 + Math.sin(time * 2 + duckGroup.position.x * 0.1 + duckGroup.position.z * 0.1) * 0.1;
+
+            // Movement
+            velocity.set(0, 0, 0);
+            camera.getWorldDirection(forward);
+            forward.y = 0;
+            forward.normalize();
+            right.crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+
+            if (keys['w']) velocity.addScaledVector(forward, moveSpeed);
+            if (keys['s']) velocity.addScaledVector(forward, -moveSpeed);
+            if (keys['a']) velocity.addScaledVector(right, -moveSpeed);
+            if (keys['d']) velocity.addScaledVector(right, moveSpeed);
+
+            duckGroup.position.add(velocity);
+            if (velocity.length() > 0.01) {
+                const lookPos = duckGroup.position.clone().add(velocity.clone().normalize());
+                duckGroup.lookAt(lookPos);
+            }
+
+            // Update controls
+            controls.target.copy(duckGroup.position);
+            controls.update();
+
+            // Collect feathers
+            for (let i = feathers.length - 1; i >= 0; i--) {
+                const f = feathers[i];
+                f.rotation.y += 0.01;
+                f.material.emissiveIntensity = 1 + Math.sin(time * 3) * 0.5;
+                if (f.position.distanceTo(duckGroup.position) < 1) {
+                    scene.remove(f);
+                    feathers.splice(i, 1);
+                    subtitleDiv.innerHTML = 'Got a shiny feather!';
+                    setTimeout(() => subtitleDiv.innerHTML = '', 3000);
+                }
+            }
+
+            // Narrative subtitles
+            areas.forEach(area => {
+                if (!area.visited && duckGroup.position.distanceTo(area.pos) < area.radius) {
+                    subtitleDiv.innerHTML = area.text;
+                    setTimeout(() => subtitleDiv.innerHTML = '', 5000);
+                    area.visited = true;
+                }
+            });
+
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>
