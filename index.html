@@ -2,204 +2,447 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Surreal Duck Pond</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D RACING · HUNGER · SCORE 120</title>
+    <!-- Free modern CSS for fonts & reset (no extra frameworks, just clean style) -->
     <style>
-        body { margin: 0; overflow: hidden; background: #1e3f5a; font-family: 'Arial Rounded MT Bold', sans-serif; }
-        #ui { position: absolute; top: 20px; left: 20px; color: white; width: 280px; pointer-events: none; z-index: 10; }
-        #scoreDisplay { font-size: 28px; text-shadow: 3px 3px 6px #000; color: #00f2ff; }
-        #hunger-container { width: 100%; height: 12px; background: rgba(0,0,0,0.4); border: 1px solid #fff; border-radius: 6px; margin-top: 10px; overflow: hidden; }
-        #hunger-bar { width: 100%; height: 100%; background: #00ffcc; transition: width 0.2s; }
-        #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.6); color: white; z-index: 100; text-align: center; }
-        button { padding: 15px 40px; font-size: 20px; cursor: pointer; border: none; border-radius: 30px; background: #00f2ff; color: #003344; font-weight: bold; margin-top: 20px; }
+        /* Minimal reset, use Poppins for that screenshot vibe */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            overflow: hidden;
+            background: #0b0c1a; /* fallback dark */
+        }
+        /* Poppins from Google Fonts (free) */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&display=swap');
+
+        /* overlay UI exactly like screenshot: top left Score / top right Hunger % */
+        #ui-container {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            width: 100%;
+            pointer-events: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            z-index: 100;
+            text-shadow: 3px 3px 0 #00000080;
+        }
+        .score-panel {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            padding: 14px 32px;
+            border-radius: 60px;
+            border: 2px solid #ffb347;
+            box-shadow: 0 0 25px #ff9900, inset 0 2px 5px #ffffa0;
+            color: white;
+            font-weight: 800;
+            font-size: 2.4rem;
+            letter-spacing: 2px;
+            transform: scale(1);
+            transition: 0.2s;
+            color: #fff4d2;
+            text-transform: uppercase;
+        }
+        .score-panel span {
+            color: #ffd966;
+            font-weight: 700;
+            margin-right: 8px;
+            font-size: 2rem;
+        }
+        .hunger-panel {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            padding: 14px 40px;
+            border-radius: 60px;
+            border: 2px solid #e03a3a;
+            box-shadow: 0 0 20px #ff4d4d, inset 0 2px 8px #ffb3b3;
+            font-weight: 800;
+            font-size: 2.4rem;
+            color: #ffe1b0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .hunger-panel .hunger-value {
+            background: #2b0f0f;
+            padding: 8px 24px;
+            border-radius: 50px;
+            font-size: 2.6rem;
+            color: #ff8989;
+            border: 1px solid #ff6868;
+            box-shadow: inset 0 0 10px #ff3131;
+            letter-spacing: 2px;
+        }
+        /* tiny speed effect line (just for looks) */
+        .glow-line {
+            position: absolute;
+            bottom: 30px;
+            left: 10%;
+            width: 80%;
+            height: 6px;
+            background: linear-gradient(90deg, transparent, #ffb347, #ff4d4d, #ffb347, transparent);
+            filter: blur(6px);
+            border-radius: 100%;
+            opacity: 0.5;
+            z-index: 50;
+        }
+        /* simple hint */
+        .hint {
+            position: absolute;
+            bottom: 15px;
+            left: 20px;
+            color: rgba(255,255,200,0.5);
+            font-size: 0.9rem;
+            font-weight: 600;
+            z-index: 200;
+            background: #00000050;
+            padding: 4px 15px;
+            border-radius: 30px;
+            backdrop-filter: blur(2px);
+            border: 1px solid #ffb34730;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
 
-    <div id="ui">
-        <div id="scoreDisplay">Score: 0</div>
-        <div id="hunger-container"><div id="hunger-bar"></div></div>
+    <!-- exactly like screenshot: Score (120) left, Hunger 75% right -->
+    <div id="ui-container">
+        <div class="score-panel"><span>🏁</span> 120</div>
+        <div class="hunger-panel"><span style="color:#ffb2b2;">🍖 HUNGER</span> <span class="hunger-value">75%</span></div>
     </div>
+    <div class="glow-line"></div>
+    <div class="hint">🖱️ click to lock pointer • WASD / arrows • boost with shift</div>
 
-    <div id="overlay">
-        <h1>SURREAL POND</h1>
-        <p>Controls: WASD / Arrows</p>
-        <button id="startBtn">SWIM</button>
-    </div>
-
+    <!-- Import Three.js core and add-ons from CDN (free) -->
     <script type="importmap">
-        { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
     </script>
 
     <script type="module">
         import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+        
+        // --- setup scene, camera, renderers ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0a1a); // deep night blue
+        scene.fog = new THREE.Fog(0x0a0a1a, 30, 100);
 
-        let scene, camera, renderer, duck, water, clock;
-        let bugs = [], fishes = [], wakes = [];
-        let score = 0, hunger = 100, isPlaying = false;
-        const keys = {};
+        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(5, 3, 10);
+        camera.lookAt(0, 1, 20);
 
-        init();
+        // WebGL renderer
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true; // shadows add depth
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
 
-        function init() {
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x1e3f5a);
-            scene.fog = new THREE.Fog(0x1e3f5a, 20, 180);
-            clock = new THREE.Clock();
+        // simple CSS2DRenderer for any future labels but we don't need for ui, but keep for misc
+        const cssRenderer = new CSS2DRenderer();
+        cssRenderer.setSize(window.innerWidth, window.innerHeight);
+        cssRenderer.domElement.style.position = 'absolute';
+        cssRenderer.domElement.style.top = '0px';
+        cssRenderer.domElement.style.left = '0px';
+        cssRenderer.domElement.style.pointerEvents = 'none'; // allow click through to canvas
+        document.body.appendChild(cssRenderer.domElement);
 
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            document.body.appendChild(renderer.domElement);
+        // --- controls (first person? but we want chase? we'll do dynamic follow)
+        // we use custom car + camera follow, no orbit
+        
+        // --- LIGHTS ---
+        // Ambient
+        const ambient = new THREE.AmbientLight(0x404060);
+        scene.add(ambient);
+        
+        // Main directional light (simulate sun/moon)
+        const dirLight = new THREE.DirectionalLight(0xffeedd, 1.2);
+        dirLight.position.set(5, 20, 10);
+        dirLight.castShadow = true;
+        dirLight.receiveShadow = true;
+        dirLight.shadow.mapSize.width = 1024;
+        dirLight.shadow.mapSize.height = 1024;
+        const d = 25;
+        dirLight.shadow.camera.left = -d;
+        dirLight.shadow.camera.right = d;
+        dirLight.shadow.camera.top = d;
+        dirLight.shadow.camera.bottom = -d;
+        dirLight.shadow.camera.near = 1;
+        dirLight.shadow.camera.far = 50;
+        dirLight.shadow.bias = -0.0005;
+        scene.add(dirLight);
 
-            const sun = new THREE.DirectionalLight(0xffffff, 2);
-            sun.position.set(10, 20, 10);
-            scene.add(sun, new THREE.AmbientLight(0xffffff, 0.4));
+        // fill lights
+        const fillLight = new THREE.PointLight(0x4466ff, 0.5);
+        fillLight.position.set(-3, 5, 15);
+        scene.add(fillLight);
+        
+        const backLight = new THREE.PointLight(0xffaa55, 0.3);
+        backLight.position.set(0, 4, -5);
+        scene.add(backLight);
 
-            createWater();
-            createDuck();
-            spawnEnvironment(); 
-            
-            document.addEventListener('keydown', (e) => keys[e.code] = true);
-            document.addEventListener('keyup', (e) => keys[e.code] = false);
-            document.getElementById('startBtn').onclick = () => { isPlaying = true; document.getElementById('overlay').style.display='none'; };
-            window.addEventListener('resize', onWindowResize);
-            
-            animate();
-        }
+        // ground reflection / neon
+        const gridHelper = new THREE.GridHelper(200, 40, 0xff9933, 0x3355aa);
+        gridHelper.position.y = 0;
+        scene.add(gridHelper);
 
-        function createWater() {
-            const geo = new THREE.PlaneGeometry(1000, 1000, 128, 128);
-            const mat = new THREE.MeshStandardMaterial({ 
-                color: 0x00aaff, 
-                transparent: true, 
-                opacity: 0.6, // Transparent water
-                roughness: 0,
-                metalness: 0.2
-            });
-            water = new THREE.Mesh(geo, mat);
-            water.rotation.x = -Math.PI / 2;
-            scene.add(water);
-        }
+        // ground plane (semi-transparent with dark material)
+        const groundMat = new THREE.MeshStandardMaterial({ color: 0x11152e, roughness: 0.4, metalness: 0.1, emissive: 0x050510 });
+        const ground = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = 0;
+        ground.receiveShadow = true;
+        scene.add(ground);
 
-        function createDuck() {
-            duck = new THREE.Group();
-            const body = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), new THREE.MeshStandardMaterial({color: 0xffcc00}));
-            body.scale.set(1, 0.7, 1.2);
-            duck.add(body);
-            const head = new THREE.Mesh(new THREE.SphereGeometry(0.6, 16, 16), new THREE.MeshStandardMaterial({color: 0xffcc00}));
-            head.position.set(0, 0.7, 0.7);
-            duck.add(head);
-            duck.position.y = 0.2;
-            scene.add(duck);
-        }
-
-        function spawnEnvironment() {
-            // Spawn Fishes
-            const fishGeo = new THREE.CapsuleGeometry(0.1, 0.4, 4, 8);
-            const fishMat = new THREE.MeshStandardMaterial({color: 0xaaaaaa, metalness: 0.8});
-            for(let i=0; i<40; i++) {
-                const fish = new THREE.Mesh(fishGeo, fishMat);
-                fish.position.set((Math.random()-0.5)*200, -1.5, (Math.random()-0.5)*200);
-                scene.add(fish);
-                fishes.push({mesh: fish, angle: Math.random()*Math.PI*2});
+        // decorative pillars / track markers (cyberpunk style)
+        function createTrackMarkers() {
+            const markerMat = new THREE.MeshStandardMaterial({ color: 0xffaa22, emissive: 0x442200 });
+            for (let i = 0; i < 30; i++) {
+                const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 1.5, 8), markerMat);
+                pillar.castShadow = true;
+                pillar.receiveShadow = true;
+                const x = (i % 2 === 0) ? -4 : 4;
+                const z = i * 4 + 10;
+                pillar.position.set(x, 0.75, z);
+                scene.add(pillar);
+                
+                // top light
+                const lightSphere = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8), new THREE.MeshStandardMaterial({ color: 0xff6600, emissive: 0xff2200 }));
+                lightSphere.position.set(x, 1.5, z);
+                lightSphere.castShadow = true;
+                scene.add(lightSphere);
             }
+        }
+        createTrackMarkers();
 
-            // Spawn Bugs
-            const bugGeo = new THREE.SphereGeometry(0.3);
-            const bugMat = new THREE.MeshStandardMaterial({color: 0xff4444, emissive: 0xff0000});
-            for(let i=0; i<30; i++) {
-                const bug = new THREE.Mesh(bugGeo, bugMat);
-                bug.position.set((Math.random()-0.5)*150, 0.5, (Math.random()-0.5)*150);
-                scene.add(bug);
-                bugs.push(bug);
+        // floating particles (speed lines / atmosphere)
+        const particleCount = 400;
+        const particleGeo = new THREE.BufferGeometry();
+        const particlePos = new Float32Array(particleCount * 3);
+        for (let i = 0; i < particleCount; i++) {
+            particlePos[i*3] = (Math.random() - 0.5) * 200;
+            particlePos[i*3+1] = (Math.random() * 15) + 1;
+            particlePos[i*3+2] = (Math.random() * 200) - 50;
+        }
+        particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
+        const particleMat = new THREE.PointsMaterial({ color: 0x88aaff, size: 0.12, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending });
+        const particles = new THREE.Points(particleGeo, particleMat);
+        scene.add(particles);
+
+        // --- Create a simple low-poly car (3D) with distinct colors ---
+        const carGroup = new THREE.Group();
+
+        // car body (main)
+        const bodyGeo = new THREE.BoxGeometry(1.8, 0.6, 3.5);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xdc143c, roughness: 0.3, metalness: 0.4, emissive: 0x330000 }); // crimson
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.castShadow = true;
+        body.receiveShadow = true;
+        body.position.y = 0.6;
+        body.position.z = 0;
+        carGroup.add(body);
+
+        // cabin
+        const cabinGeo = new THREE.BoxGeometry(1.2, 0.5, 1.5);
+        const cabinMat = new THREE.MeshStandardMaterial({ color: 0x2a9df4, roughness: 0.2, metalness: 0.1, emissive: 0x001122 });
+        const cabin = new THREE.Mesh(cabinGeo, cabinMat);
+        cabin.castShadow = true;
+        cabin.receiveShadow = true;
+        cabin.position.set(0, 1.1, -0.2);
+        carGroup.add(cabin);
+
+        // hood light
+        const lightBar = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.1, 0.2), new THREE.MeshStandardMaterial({ color: 0xffaa33, emissive: 0xaa4400 }));
+        lightBar.position.set(0, 0.9, 1.6);
+        lightBar.castShadow = true;
+        carGroup.add(lightBar);
+
+        // wheels (with shiny rims)
+        const wheelMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.4 });
+        const rimMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.8, roughness: 0.2 });
+        const positions = [[-1.0, 0.4, 1.2], [1.0, 0.4, 1.2], [-1.0, 0.4, -1.3], [1.0, 0.4, -1.3]];
+        positions.forEach(pos => {
+            const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.4, 24), wheelMat);
+            wheel.rotation.z = Math.PI/2;
+            wheel.position.set(pos[0], pos[1], pos[2]);
+            wheel.castShadow = true;
+            wheel.receiveShadow = true;
+            carGroup.add(wheel);
+            
+            const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.41, 8), rimMat);
+            rim.rotation.z = Math.PI/2;
+            rim.position.set(pos[0], pos[1], pos[2]);
+            rim.castShadow = true;
+            carGroup.add(rim);
+        });
+
+        // spoiler
+        const spoilerGeo = new THREE.BoxGeometry(1.4, 0.2, 0.2);
+        const spoilerMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+        const spoiler = new THREE.Mesh(spoilerGeo, spoilerMat);
+        spoiler.position.set(0, 1.2, -1.6);
+        spoiler.castShadow = true;
+        carGroup.add(spoiler);
+
+        carGroup.position.set(0, 0.5, 15); // start position
+        carGroup.rotation.y = Math.PI; // face forward? we need to set properly: forward is +Z? we want car to face +Z. By default box faces, but our car shape: cabin at -z? we set cabin at -0.2 means front is +Z. Yes, so forward = +Z.
+        // but we want car to face camera initial? we'll set rotation so that car points +Z (forward). Already front is +Z due to cabin offset.
+        // but we need rotate whole group so that +X is right, +Z forward. default orientation works: cabin at -0.2 means front is +Z.
+        // Let's adjust: lightBar at +1.6z is front, spoiler at -1.6z is rear. So +z is forward. Good.
+        
+        scene.add(carGroup);
+
+        // add floating "HUNGER" label above car just for fun? maybe not needed, we have UI.
+        
+        // --- Input handling ---
+        const keyState = {
+            w: false, a: false, s: false, d: false, shift: false, arrowup: false, arrowdown: false, arrowleft: false, arrowright: false
+        };
+        window.addEventListener('keydown', (e) => {
+            switch(e.code) {
+                case 'KeyW': keyState.w = true; e.preventDefault(); break;
+                case 'KeyA': keyState.a = true; e.preventDefault(); break;
+                case 'KeyS': keyState.s = true; e.preventDefault(); break;
+                case 'KeyD': keyState.d = true; e.preventDefault(); break;
+                case 'ShiftLeft': case 'ShiftRight': keyState.shift = true; e.preventDefault(); break;
+                case 'ArrowUp': keyState.arrowup = true; e.preventDefault(); break;
+                case 'ArrowDown': keyState.arrowdown = true; e.preventDefault(); break;
+                case 'ArrowLeft': keyState.arrowleft = true; e.preventDefault(); break;
+                case 'ArrowRight': keyState.arrowright = true; e.preventDefault(); break;
             }
+        });
+        window.addEventListener('keyup', (e) => {
+            switch(e.code) {
+                case 'KeyW': keyState.w = false; e.preventDefault(); break;
+                case 'KeyA': keyState.a = false; e.preventDefault(); break;
+                case 'KeyS': keyState.s = false; e.preventDefault(); break;
+                case 'KeyD': keyState.d = false; e.preventDefault(); break;
+                case 'ShiftLeft': case 'ShiftRight': keyState.shift = false; e.preventDefault(); break;
+                case 'ArrowUp': keyState.arrowup = false; e.preventDefault(); break;
+                case 'ArrowDown': keyState.arrowdown = false; e.preventDefault(); break;
+                case 'ArrowLeft': keyState.arrowleft = false; e.preventDefault(); break;
+                case 'ArrowRight': keyState.arrowright = false; e.preventDefault(); break;
+            }
+        });
+
+        // pointer lock for driving feel (optional, but we want camera follow anyway)
+        renderer.domElement.addEventListener('click', () => {
+            renderer.domElement.requestPointerLock();
+        });
+
+        // --- Game state ---
+        let speed = 0;
+        const maxSpeed = 0.8;
+        const turnSpeed = 0.025;
+        let velocity = new THREE.Vector3();
+        
+        // camera follow parameters
+        const cameraOffset = new THREE.Vector3(-4, 3, 6); // behind and above
+
+        // make some random cubes as obstacles / collectibles? to make racing game feel
+        const obstacles = [];
+        const obsMat = new THREE.MeshStandardMaterial({ color: 0xffaa33, emissive: 0x331100 });
+        for (let i = 0; i < 12; i++) {
+            const size = 0.6 + Math.random()*0.4;
+            const obs = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), obsMat);
+            obs.castShadow = true;
+            obs.receiveShadow = true;
+            const x = (Math.random() - 0.5) * 8;
+            const z = 25 + i * 7 + Math.random() * 10;
+            obs.position.set(x, size/2, z);
+            scene.add(obs);
+            obstacles.push(obs);
         }
 
-        // --- Surreal Wake Effect ---
-        function createWake() {
-            const wakeGeo = new THREE.RingGeometry(0.5, 0.7, 32);
-            const wakeMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5, side: THREE.DoubleSide });
-            const wake = new THREE.Mesh(wakeGeo, wakeMat);
-            wake.position.set(duck.position.x, 0.05, duck.position.z);
-            wake.rotation.x = -Math.PI / 2;
-            scene.add(wake);
-            wakes.push({ mesh: wake, life: 1.0 });
-        }
-
+        // --- Animation loop with car movement ---
         function animate() {
             requestAnimationFrame(animate);
-            const t = clock.getElapsedTime();
 
-            // 1. Dynamic Surreal Waves
-            const pos = water.geometry.attributes.position.array;
-            for(let i = 0; i < pos.length; i+=3) {
-                // Larger, visible wave function
-                pos[i+2] = Math.sin(pos[i]*0.2 + t*1.5) * 0.5 + Math.cos(pos[i+1]*0.2 + t*1.5) * 0.5;
-            }
-            water.geometry.attributes.position.needsUpdate = true;
-
-            if (isPlaying) {
-                let moving = false;
-                if(keys['KeyW'] || keys['ArrowUp']) { duck.translateZ(0.3); moving = true; }
-                if(keys['KeyS'] || keys['ArrowDown']) { duck.translateZ(-0.15); moving = true; }
-                if(keys['KeyA'] || keys['ArrowLeft']) duck.rotation.y += 0.05;
-                if(keys['KeyD'] || keys['ArrowRight']) duck.rotation.y -= 0.05;
-
-                // Create wake path if moving forward
-                if(moving && Math.random() > 0.7) createWake();
-
-                // Hunger
-                hunger -= 0.05;
-                document.getElementById('hunger-bar').style.width = hunger + "%";
-                if(hunger <= 0) score = Math.max(0, score - 0.1);
-
-                // Collections
-                bugs.forEach((bug, i) => {
-                    if(duck.position.distanceTo(bug.position) < 1.5) {
-                        bug.position.set((Math.random()-0.5)*200, 0.5, (Math.random()-0.5)*200);
-                        score += 10;
-                        hunger = Math.min(100, hunger + 15);
-                        document.getElementById('scoreDisplay').innerText = `Score: ${Math.floor(score)}`;
-                    }
-                });
+            // handle car input (forward/back and steering)
+            const forward = (keyState.w || keyState.arrowup) ? 1 : (keyState.s || keyState.arrowdown) ? -1 : 0;
+            const turn = (keyState.a || keyState.arrowleft) ? 1 : (keyState.d || keyState.arrowright) ? -1 : 0; // positive turn left (rotate +Y)
+            
+            // boost with shift
+            const boost = keyState.shift ? 1.8 : 1.0;
+            
+            // acceleration/deceleration
+            if (forward !== 0) {
+                speed += forward * 0.02 * boost;
+                if (Math.abs(speed) > maxSpeed * boost) speed = Math.sign(speed) * maxSpeed * boost;
+            } else {
+                // friction
+                speed *= 0.98;
+                if (Math.abs(speed) < 0.01) speed = 0;
             }
 
-            // 2. Animate Fishes (Schooling behavior)
-            fishes.forEach(f => {
-                f.angle += 0.02;
-                f.mesh.position.x += Math.cos(f.angle) * 0.1;
-                f.mesh.position.z += Math.sin(f.angle) * 0.1;
-                f.mesh.rotation.y = -f.angle;
-            });
-
-            // 3. Animate Wakes (Expanding Path)
-            for(let i = wakes.length - 1; i >= 0; i--) {
-                const w = wakes[i];
-                w.life -= 0.01;
-                w.mesh.scale.x += 0.05;
-                w.mesh.scale.y += 0.05;
-                w.mesh.material.opacity = w.life;
-                if(w.life <= 0) {
-                    scene.remove(w.mesh);
-                    wakes.splice(i, 1);
-                }
+            // turning (only if moving)
+            if (Math.abs(speed) > 0.02) {
+                carGroup.rotation.y += turn * turnSpeed * Math.sign(speed) * (boost * 0.8);
             }
 
-            // Camera
-            const camOffset = new THREE.Vector3(0, 10, -20).applyMatrix4(duck.matrixWorld);
-            camera.position.lerp(camOffset, 0.1);
-            camera.lookAt(duck.position);
+            // move car forward in local direction
+            const forwardDir = new THREE.Vector3(0, 0, 1).applyQuaternion(carGroup.quaternion);
+            carGroup.position.addScaledVector(forwardDir, speed);
 
+            // simple boundary (stay within -8..8 in X)
+            if (carGroup.position.x < -7) carGroup.position.x = -7;
+            if (carGroup.position.x > 7) carGroup.position.x = 7;
+
+            // camera follow (third person)
+            const idealOffset = cameraOffset.clone().applyQuaternion(carGroup.quaternion);
+            camera.position.copy(carGroup.position.clone().add(idealOffset));
+            camera.lookAt(carGroup.position.clone().add(new THREE.Vector3(0, 1, 0)));
+
+            // animate particles slowly
+            particles.rotation.y += 0.0005;
+
+            // fake update score/hunger? not needed, static as screenshot.
+            // we can randomly blink hunger 75% for fun? no, keep consistent.
+
+            // render both
             renderer.render(scene, camera);
+            cssRenderer.render(scene, camera);
         }
 
+        animate();
+
+        // --- resize handler ---
+        window.addEventListener('resize', onWindowResize, false);
         function onWindowResize() {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+            cssRenderer.setSize(window.innerWidth, window.innerHeight);
         }
+
+        // optional: add some distant glowing orbs to mimic screenshot "hunger" theme
+        const glowBallMat = new THREE.MeshStandardMaterial({ color: 0xff4422, emissive: 0x440000 });
+        for (let k=0; k<5; k++) {
+            const ball = new THREE.Mesh(new THREE.SphereGeometry(0.8, 16), glowBallMat);
+            ball.position.set(2 + k*3, 1.5, 60 + k*10);
+            ball.castShadow = true;
+            scene.add(ball);
+        }
+
+        // add some floating "75%" text? but we already have UI, keep clean.
+
+        console.log('Racing game started — Score 120, Hunger 75%');
     </script>
 </body>
 </html>
